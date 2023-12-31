@@ -327,6 +327,36 @@ public class Dispatcher {
 		
 			
 	}
+	private void print(String color, int time, int processId, int priority, int remainTime,String processSituation,
+			int waitingTime) {
+		String process = editProcessSituation(processSituation, 18);
+		System.out.print(color+time);
+		 if(time < 10)
+	            System.out.print(" ");
+	        System.out.print(" sn "+"\t"+ process +"\t \t" +"\t(id: "+ processId);
+	        if(processId < 10)
+	            System.out.printf(" ");
+	        System.out.printf("   "+"priority: "+priority+"    "+ "remain time: "+ remainTime);
+	        if(remainTime < 10)
+	            System.out.print(" ");
+	        System.out.print(" waiting time: "+ remainTime);
+	        if(remainTime < 10)
+	            System.out.printf(" ");
+	        System.out.println(")");
+	}
 	
+	private String editProcessSituation(String string, int size) {
+		if (string.length() >= size)
+        {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(string);
+        while (sb.length() < size)
+        {
+            sb.append(' ');
+        }
+        return sb.toString();
+	}
 	
 }
