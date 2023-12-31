@@ -63,6 +63,19 @@ public class Dispatcher {
 			if(realTimeProcess == null) { // start fcfs process
 				realTimeProcess = realTimeProcesses.FCFS();
 				
+				if(realTimeProcess.getModems() > SystemResource.modemCount || 
+						realTimeProcess.getCds() > SystemResource.cdCount
+						|| realTimeProcess.getPrinters() > SystemResource.printerCount || 
+						realTimeProcess.getScanners() > SystemResource.scannerCount
+						|| realTimeProcess.getMemory() > SystemResource.realtimeMemory) {
+					
+					
+					System.out.printf("%d  sn real-time 	process 	demands 	so much 	resource 	and 	DELETED! 	id:%d%n", time ,realTimeProcess.getProcessId());
+					realTimeProcess = null;
+					time++;
+					
+				}
+				
 				
 			}
 		}
