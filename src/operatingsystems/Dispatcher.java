@@ -67,10 +67,71 @@ public class Dispatcher {
 				}
 				
 				if(realTimeProcess == null) { // start fcfs algorithm
+					realTimeProcess = realTimeProcesses.FCFS();
 					
+					if(realTimeProcess.getModems() > SystemResource.modemCount || 
+							realTimeProcess.getCds() > SystemResource.cdCount
+							|| realTimeProcess.getPrinters() > SystemResource.printerCount || 
+							realTimeProcess.getScanners() > SystemResource.scannerCount
+							|| realTimeProcess.getMemory() > SystemResource.realtimeMemory) {
+						
+						
+						System.out.printf("%d  sn real-time 	process 	demands 	so much 	resource 	and 	DELETED! 	id:%d%n", time ,realTimeProcess.getProcessId());
+						realTimeProcess = null;
+						time++;
+						
+					}
+					else {
+						SystemResource.modemCount -= realTimeProcess.getModems();
+				        SystemResource.cdCount -= realTimeProcess.getCds();
+				        SystemResource.printerCount -= realTimeProcess.getPrinters();
+				        SystemResource.scannerCount -= realTimeProcess.getScanners();
+				        SystemResource.realtimeMemory -= realTimeProcess.getMemory();
+				        
+				        realTimeProcess.setProcessSituation("started");
+				        
+				        print(realTimeProcess.getColor(),time,realTimeProcess.getProcessId(),realTimeProcess.getPriority()
+	                            ,realTimeProcess.getProcessTime(),realTimeProcess.getProcessSituation(), 
+	                            realTimeProcess.getWaitingTime());
+				        
+				        remainTime = realTimeProcess.getProcessTime() - 1;
+				        realTimeProcess.setProcessTime(remainTime);
+				        
+				        
+					}
+					
+					continue;
 				}
 				else { // continue from real time process
+					checkIsProcessExpired(); 
+					time++;
 					
+					if(realTimeProcess.getProcessTime() == 0) { //finish the process
+						realTimeProcess.setProcessSituation("finished");
+						print(realTimeProcess.getColor(), time, realTimeProcess.getProcessId(),realTimeProcess.getPriority()
+                            ,realTimeProcess.getProcessTime(),realTimeProcess.getProcessSituation(), 
+                            realTimeProcess.getWaitingTime());
+						
+						SystemResource.modemCount += realTimeProcess.getModems();
+				        SystemResource.cdCount += realTimeProcess.getCds();
+				        SystemResource.printerCount += realTimeProcess.getPrinters();
+				        SystemResource.scannerCount += realTimeProcess.getScanners();
+				        SystemResource.realtimeMemory += realTimeProcess.getMemory();
+				        
+				        realTimeProcess = null;
+				        
+						
+						
+					}else { // keep processing
+						realTimeProcess.setProcessSituation("processing");
+						print(realTimeProcess.getColor(), time, realTimeProcess.getProcessId(),realTimeProcess.getPriority()
+                            ,realTimeProcess.getProcessTime(),realTimeProcess.getProcessSituation(), 
+                            realTimeProcess.getWaitingTime());
+						remainTime = realTimeProcess.getProcessTime() - 1;
+						realTimeProcess.setProcessTime(remainTime);
+					}
+					
+					continue;
 				}
 			}
 			
@@ -88,7 +149,31 @@ public class Dispatcher {
                     	userProcess = lowPriorityQueue.getFirstElement();
                     }
                     if(userProcess.getProcessSituation()=="in queue"){
-                    	
+                    	if(userProcess.getModems() > SystemResource.modemCount ||       
+                    			userProcess.getCds() > SystemResource.cdCount
+    							|| userProcess.getPrinters() > SystemResource.printerCount || 
+    							userProcess.getScanners() > SystemResource.scannerCount
+    							|| userProcess.getMemory() > SystemResource.userMemory) {
+                    		//userProcesses.delete(userProcess);
+    						System.out.printf("%d  sn user 		process 	demands 	so much 	resource 	and 	DELETED! 	id:%d%n", time, userProcess.getProcessId());
+    						userProcess = null;
+    						time++;
+    						
+                    	}
+                    	else {
+                    		//kuyruktaki prosesler 1sn olacak sekilde calistirilmaya baslanir
+	                        checkIsProcessExpired();
+	                        userProcess.setProcessSituation("started");
+	
+	                        print(userProcess.getColor(),time,userProcess.getProcessId(),userProcess.getPriority()
+	                                ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
+	                                userProcess.getWaitingTime());
+	                        waitOrFinishUserProcess();
+	                        //proses 1sn calistirilir isi biterse sonlandirilir bitmezse beklemeye alinip onceligi düsürülür
+	                        
+                    	}
+                        
+                    	continue;
                     }
                     else if(userProcess.getProcessSituation()=="waiting"){
                         //proses beklemede ise yürütülür ve tekrar bekletmeye alinir veya sonlandirilir
