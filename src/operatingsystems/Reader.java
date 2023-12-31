@@ -7,11 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Reader {
+	private Queues queues;
+	private Color color;
+	
+    public Reader() {
+		this.queues = new Queues();
+		this.color = new Color();
+	}
 
-    public static List<Process> read() {
-    	
-        List<Process> processList = new ArrayList<>();
-
+	public Queues read() {
+        int id=0;
+        
         // Dosya adını değiştirin veya tam yolu belirtin
         String fileName = "giris.txt";
 
@@ -29,12 +35,18 @@ public class Reader {
                         Integer.parseInt(tokens[6].trim()),
                         Integer.parseInt(tokens[7].trim())
                 );
-                processList.add(newProcess);
+                newProcess.setProcessId(id);
+                newProcess.setColor(color.getRandomColor());
+                
+                queues.add(newProcess);
+                
+                id++;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-		return processList;
+		return queues;
     }
 }
+
 

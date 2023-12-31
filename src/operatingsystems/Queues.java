@@ -23,7 +23,7 @@ public class Queues {
 		processes.remove(process);
 	}
 	
-	public boolean isEmpty() {
+	public boolean Empty() {
 		return processes.isEmpty();
 	}
 	

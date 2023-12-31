@@ -2,6 +2,7 @@ package operatingsystems;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 public class Dispatcher {
 	private Queues processes;
@@ -37,9 +38,9 @@ public class Dispatcher {
 	
 	
 	public void simulate() {
-		while(true) 
-		{
-			assignProcessToQueues();
+		while(true) {
+			
+			assignProcessToQueues(); // filling queues.
 			
 			if(realTimeProcesses.Empty() == false || realTimeProcess!=null) {
 				if(userProcess != null) {
@@ -103,7 +104,7 @@ public class Dispatcher {
 					continue;
 				}
 				else { // continue from real time process
-					checkIsProcessExpired(); 
+					checkIsProcessExpired();
 					time++;
 					
 					if(realTimeProcess.getProcessTime() == 0) { //finish the process
@@ -136,8 +137,8 @@ public class Dispatcher {
 			}
 			
 			else if((!lowPriorityQueue.Empty()) || (!midPriorityQueue.Empty()) || (!highPriorityQueue.Empty()) || userProcess!=null ){
-                //calisan gercek zamanli prosesler olmadigi zaman kullanici prosesleri algoritmaya göre calistirilir
-                //öncelikle yuksek öncelik kuyruguna bakilir orada elemanlar varsa ilk onlar calistirilir
+                //if there arent real-time processes, next step is user processes
+                //start from the highest to lower queues
                 if (realTimeProcess==null) {
                     if (!highPriorityQueue.Empty()) {
                         userProcess = highPriorityQueue.getFirstElement();
@@ -149,19 +150,19 @@ public class Dispatcher {
                     	userProcess = lowPriorityQueue.getFirstElement();
                     }
                     if(userProcess.getProcessSituation()=="in queue"){
-                    	if(userProcess.getModems() > SystemResource.modemCount ||       
+                    	if(userProcess.getModems() > SystemResource.modemCount || 
                     			userProcess.getCds() > SystemResource.cdCount
     							|| userProcess.getPrinters() > SystemResource.printerCount || 
     							userProcess.getScanners() > SystemResource.scannerCount
     							|| userProcess.getMemory() > SystemResource.userMemory) {
-                    		//userProcesses.delete(userProcess);
+                    		
     						System.out.printf("%d  sn user 		process 	demands 	so much 	resource 	and 	DELETED! 	id:%d%n", time, userProcess.getProcessId());
     						userProcess = null;
     						time++;
     						
                     	}
-                    	else {
-                    		//kuyruktaki prosesler 1sn olacak sekilde calistirilmaya baslanir
+                    	else { //different processes are working for each 1 second
+                    		
 	                        checkIsProcessExpired();
 	                        userProcess.setProcessSituation("started");
 	
@@ -169,14 +170,14 @@ public class Dispatcher {
 	                                ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
 	                                userProcess.getWaitingTime());
 	                        waitOrFinishUserProcess();
-	                        //proses 1sn calistirilir isi biterse sonlandirilir bitmezse beklemeye alinip onceligi düsürülür
+	                        //wait for process if its not finished. When it is finished system resources will be freed
 	                        
                     	}
                         
                     	continue;
                     }
                     else if(userProcess.getProcessSituation()=="waiting"){
-                        //proses beklemede ise yürütülür ve tekrar bekletmeye alinir veya sonlandirilir
+                     
                         checkIsProcessExpired();
                         userProcess.setWaitingTime(userProcess.getWaitingTime()+1);
                         userProcess.setProcessSituation("processing");
@@ -195,12 +196,13 @@ public class Dispatcher {
                     highPriorityQueue.Empty()&& midPriorityQueue.Empty()&& userProcess==null&& realTimeProcess==null) {
 				break;
 			}
+			
 		}
 	}
 	
 	private void assignProcessToQueues() {
-		if(!processes.isEmpty()) {
-			for(var process : processes.getAll().stream().toList()) {
+		if(!processes.Empty()) {
+			for(Process process : processes.getAll().stream().collect(Collectors.toList())) {
 				if(process.getArrivalTime() == time) {
 					if(process.getPriorityLevel() == 0) { //real-time
 						realTimeProcesses.add(process);
@@ -212,8 +214,8 @@ public class Dispatcher {
 				}
 			}
 		}
-		if(!userProcesses.isEmpty()) {
-			for(var userProcess : userProcesses.getAll().stream().toList()) {
+		if(!userProcesses.Empty()) {
+			for(Process userProcess : userProcesses.getAll().stream().collect(Collectors.toList())) {
 				userProcess.setProcessSituation("in queue");
 				
 				if(userProcess.getPriorityLevel() == 1) {
@@ -230,13 +232,13 @@ public class Dispatcher {
 		}
 	}
 	
-	private void waitOrFinishTheProcess() {
+	private void waitOrFinishUserProcess() {
 		time++;
 		
 		userProcess.setWaitingTime(0);
 		
 		remainTime = userProcess.getProcessTime() - 1;
-		userProcess.setProcessTime(time);
+		userProcess.setProcessTime(remainTime);
 		
 		if(userProcess.getProcessTime() != 0) { //if process didnt finish, then assign to lower queues
 			
@@ -253,11 +255,23 @@ public class Dispatcher {
 			}
 			
 			userProcess.setProcessSituation("waiting");
-			//print();
+			
+			print(userProcess.getColor(),time,userProcess.getProcessId(),userProcess.getPriority()
+                    ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
+                    userProcess.getWaitingTime());
 		}
 		else {
+			SystemResource.modemCount += userProcess.getModems();
+	        SystemResource.cdCount += userProcess.getCds();
+	        SystemResource.printerCount += userProcess.getPrinters();
+	        SystemResource.scannerCount += userProcess.getScanners();
+	        SystemResource.userMemory += userProcess.getMemory();
+			
 			userProcess.setProcessSituation("finished");
-			//print();
+			
+			print(userProcess.getColor(),time,userProcess.getProcessId(),userProcess.getPriority()
+                    ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
+                    userProcess.getWaitingTime());
 			
 			if(userProcess.getPriorityLevel() == 3) {
 				lowPriorityQueue.delete(userProcess);
@@ -274,13 +288,46 @@ public class Dispatcher {
 		
 	}
 	
+	private void waitOrFinishRealtimeProcess() {
+		time++;
+		
+		realTimeProcess.setWaitingTime(0);
+		
+		remainTime = realTimeProcess.getProcessTime() - 1;
+		realTimeProcess.setProcessTime(remainTime);
+		
+		if(realTimeProcess.getProcessTime() != 0) { 
+			realTimeProcess.setProcessSituation("waiting");
+			print(realTimeProcess.getColor(),time,realTimeProcess.getProcessId(),realTimeProcess.getPriority()
+                    ,realTimeProcess.getProcessTime(),realTimeProcess.getProcessSituation(), 
+                    realTimeProcess.getWaitingTime());
+		}
+		else {
+			SystemResource.modemCount += realTimeProcess.getModems();
+	        SystemResource.cdCount += realTimeProcess.getCds();
+	        SystemResource.printerCount += realTimeProcess.getPrinters();
+	        SystemResource.scannerCount += realTimeProcess.getScanners();
+	        SystemResource.realtimeMemory += realTimeProcess.getMemory();
+	        
+			realTimeProcess.setProcessSituation("finished");
+			print(realTimeProcess.getColor(),time,realTimeProcess.getProcessId(),realTimeProcess.getPriority()
+                    ,realTimeProcess.getProcessTime(),realTimeProcess.getProcessSituation(), 
+                    realTimeProcess.getWaitingTime());
+			
+			
+			realTimeProcess = null;
+		}
+	}
+	
 	private void checkIsProcessExpired() {
-		if(!highPriorityQueue.isEmpty()) {
-			for(var process : highPriorityQueue.getAll().stream().toList()) {
+		if(!highPriorityQueue.Empty()) {
+			for(Process process : highPriorityQueue.getAll().stream().collect(Collectors.toList())) {
 				if(process.getProcessSituation() == "waiting" || process.getProcessSituation() == "in queue") {
-					if(process.getWaitingTime() == 30) {
+					if(process.getWaitingTime() == 20) {
 						process.setProcessSituation("expired");
-						//print();
+						print(process.getColor(),time,process.getProcessId(),process.getPriority()
+                                ,process.getProcessTime(),process.getProcessSituation(), 
+                                process.getWaitingTime());
 						
 						highPriorityQueue.delete(process);
 					}
@@ -291,12 +338,14 @@ public class Dispatcher {
 			}
 		}
 		
-		if(!midPriorityQueue.isEmpty()) {
-			for(var process : midPriorityQueue.getAll().stream().toList()) {
+		if(!midPriorityQueue.Empty()) {
+			for(Process process : midPriorityQueue.getAll().stream().collect(Collectors.toList())) {
 				if(process.getProcessSituation() == "waiting" || process.getProcessSituation() == "in queue") {
-					if(process.getWaitingTime() == 30) {
+					if(process.getWaitingTime() == 20) {
 						process.setProcessSituation("expired");
-						//print();
+						print(process.getColor(),time,process.getProcessId(),process.getPriority()
+                                ,process.getProcessTime(),process.getProcessSituation(), 
+                                process.getWaitingTime());
 						
 						midPriorityQueue.delete(process);
 					}
@@ -307,12 +356,14 @@ public class Dispatcher {
 			}
 		}
 		
-		if(!lowPriorityQueue.isEmpty()) {
-			for(var process : lowPriorityQueue.getAll().stream().toList()) {
+		if(!lowPriorityQueue.Empty()) {
+			for(Process process : lowPriorityQueue.getAll().stream().collect(Collectors.toList())) {
 				if(process.getProcessSituation() == "waiting" || process.getProcessSituation() == "in queue") {
-					if(process.getWaitingTime() == 30) {
+					if(process.getWaitingTime() == 20) {
 						process.setProcessSituation("expired");
-						//print();
+						print(process.getColor(),time,process.getProcessId(),process.getPriority()
+                                ,process.getProcessTime(),process.getProcessSituation(), 
+                                process.getWaitingTime());
 						
 						lowPriorityQueue.delete(process);
 					}
@@ -327,6 +378,7 @@ public class Dispatcher {
 		
 			
 	}
+	
 	private void print(String color, int time, int processId, int priority, int remainTime,String processSituation,
 			int waitingTime) {
 		String process = editProcessSituation(processSituation, 18);
@@ -358,5 +410,6 @@ public class Dispatcher {
         }
         return sb.toString();
 	}
+	
 	
 }

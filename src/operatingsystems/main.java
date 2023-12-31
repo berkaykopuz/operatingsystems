@@ -7,11 +7,10 @@ import java.util.Scanner;
 public class main {
 
     public static void main(String[] args) {
-        List<Process> processList = Reader.read();
-        
-        System.out.print("a");
-
-       
+    	Reader reader = new Reader();
+        Queues queues = reader.read();
+        Dispatcher dispatcher = new Dispatcher(queues);
+        dispatcher.simulate();
     }
 
     

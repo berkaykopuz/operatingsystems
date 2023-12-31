@@ -16,11 +16,11 @@ public class Color {
     }
 
     public String getRandomColor(){
-        //her bir prosese colors dizisinden farklı bir renk atanir
+        //assign random colors to every process
         int rnd;
         do{
             if(colorList.size()== colors.length){
-                //yukarıdaki dizi sayisindan fazla proses varsa mecburen herhangi bir prosese atanmış olan color yeni prosese de atanacaktır.
+                // if there is already chosen color, though assign it again
                 rnd = new Random().nextInt(colors.length);
                 return colors[rnd];
             }
