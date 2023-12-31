@@ -37,46 +37,78 @@ public class Dispatcher {
 	
 	
 	public void simulate() {
-		while(true) {
+		while(true) 
+		{
 			assignProcessToQueues();
 			
-			if(!realTimeProcesses.isEmpty() || realTimeProcess!=null) {
-				if(userProcess.getProcessSituation() == "started") { // if there is a real time process make user p. wait
-					userProcess.setProcessSituation("waiting");
-					if(userProcess.getPriorityLevel() == 1) {
-						userProcess.setPriorityLevel(2);
-						highPriorityQueue.delete(userProcess);
-						midPriorityQueue.add(userProcess);
+			if(realTimeProcesses.Empty() == false || realTimeProcess!=null) {
+				if(userProcess != null) {
+					if(userProcess.getProcessSituation() == "started") { // if there is a real time process make user p. wait
+						userProcess.setProcessSituation("waiting");
+						if(userProcess.getPriorityLevel() == 1) {
+							userProcess.setPriorityLevel(2);
+							highPriorityQueue.delete(userProcess);
+							midPriorityQueue.add(userProcess);
+						}
+						else if(userProcess.getPriorityLevel() == 2) {
+							userProcess.setPriorityLevel(3);
+							midPriorityQueue.delete(userProcess);
+							lowPriorityQueue.add(userProcess);
+						}
+						else {
+							lowPriorityQueue.delete(userProcess);
+							lowPriorityQueue.add(userProcess);
+						}
+						print(userProcess.getColor(),time,userProcess.getProcessId(),userProcess.getPriority()
+	                            ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
+	                            userProcess.getWaitingTime());
 					}
-					else if(userProcess.getPriorityLevel() == 2) {
-						userProcess.setPriorityLevel(3);
-						midPriorityQueue.delete(userProcess);
-						lowPriorityQueue.add(userProcess);
-					}
-					else {
-						lowPriorityQueue.delete(userProcess);
-						lowPriorityQueue.add(userProcess);
-					}
-					//print()
+				
+				}
+				
+				if(realTimeProcess == null) { // start fcfs algorithm
+					
+				}
+				else { // continue from real time process
+					
 				}
 			}
-			if(realTimeProcess == null) { // start fcfs process
-				realTimeProcess = realTimeProcesses.FCFS();
-				
-				if(realTimeProcess.getModems() > SystemResource.modemCount || 
-						realTimeProcess.getCds() > SystemResource.cdCount
-						|| realTimeProcess.getPrinters() > SystemResource.printerCount || 
-						realTimeProcess.getScanners() > SystemResource.scannerCount
-						|| realTimeProcess.getMemory() > SystemResource.realtimeMemory) {
-					
-					
-					System.out.printf("%d  sn real-time 	process 	demands 	so much 	resource 	and 	DELETED! 	id:%d%n", time ,realTimeProcess.getProcessId());
-					realTimeProcess = null;
-					time++;
-					
-				}
-				
-				
+			
+			else if((!lowPriorityQueue.Empty()) || (!midPriorityQueue.Empty()) || (!highPriorityQueue.Empty()) || userProcess!=null ){
+                //calisan gercek zamanli prosesler olmadigi zaman kullanici prosesleri algoritmaya göre calistirilir
+                //öncelikle yuksek öncelik kuyruguna bakilir orada elemanlar varsa ilk onlar calistirilir
+                if (realTimeProcess==null) {
+                    if (!highPriorityQueue.Empty()) {
+                        userProcess = highPriorityQueue.getFirstElement();
+
+                    } else if (!midPriorityQueue.Empty()) {
+                    	userProcess = midPriorityQueue.getFirstElement();
+
+                    } else if(!lowPriorityQueue.Empty()) {
+                    	userProcess = lowPriorityQueue.getFirstElement();
+                    }
+                    if(userProcess.getProcessSituation()=="in queue"){
+                    	
+                    }
+                    else if(userProcess.getProcessSituation()=="waiting"){
+                        //proses beklemede ise yürütülür ve tekrar bekletmeye alinir veya sonlandirilir
+                        checkIsProcessExpired();
+                        userProcess.setWaitingTime(userProcess.getWaitingTime()+1);
+                        userProcess.setProcessSituation("processing");
+
+                        print(userProcess.getColor(),time,userProcess.getProcessId(),userProcess.getPriority()
+                                ,userProcess.getProcessTime(),userProcess.getProcessSituation(), 
+                                userProcess.getWaitingTime());
+
+                        waitOrFinishUserProcess();
+                        continue;
+                    }
+                }
+            }
+			
+			if(processes.Empty()&& userProcesses.Empty()&&realTimeProcesses.Empty()&& lowPriorityQueue.Empty()&&
+                    highPriorityQueue.Empty()&& midPriorityQueue.Empty()&& userProcess==null&& realTimeProcess==null) {
+				break;
 			}
 		}
 	}
